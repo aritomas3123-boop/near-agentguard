@@ -1,6 +1,6 @@
 "use strict";
 
-const DEFAULT_MODEL = "gemini-3.5-flash";
+const DEFAULT_MODEL = "gemini-3.8-flash";
 const MAX_DAILY_ADVISORY_CALLS = 12;
 const MAX_MINUTE_ADVISORY_CALLS = 3;
 let quotaDay = "";
