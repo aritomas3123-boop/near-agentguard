@@ -8,3 +8,10 @@
 .vscode/
 .idea/
 build-artifacts/
+
+tools/
+init-args.json
+proposal-*.json
+approval-*.json
+*.credential.json
+

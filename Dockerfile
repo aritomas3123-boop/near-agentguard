@@ -1,5 +1,5 @@
 # Build the Rust contract and execute unit tests on Render's remote builder.
-# This image DOES NOT deploy or execute on NEAR, move tokens, or hold keys.
+# The resulting service only READS NEAR Testnet; it never holds keys or sends transactions.
 FROM rust:1.99-bookworm AS compile
 WORKDIR /src
 COPY Cargo.toml ./
@@ -14,6 +14,7 @@ FROM node:22-alpine
 WORKDIR /app
 COPY web/server.js ./server.js
 COPY web/index.html ./index.html
+COPY web/app.js ./app.js
 COPY --from=compile /src/target/wasm32-unknown-unknown/release/agentguard_near.wasm ./agentguard_near.wasm
 COPY --from=compile /src/contract.sha256 ./contract.sha256
 ENV NODE_ENV=production

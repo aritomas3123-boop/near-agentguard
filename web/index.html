@@ -1,12 +1,123 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>NEAR AgentGuard | Compiled Contract</title>
-<style>body{margin:0;background:#09131c;color:#e9f4f9;font:18px/1.6 system-ui,sans-serif}main{max-width:900px;margin:auto;padding:66px 24px}h1{font-size:clamp(36px,7vw,68px);line-height:1.06;letter-spacing:-2px;margin:.25em 0}.green{color:#8dffb9}.tag{font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#8dffb9;font-weight:bold}.card{background:#142332;border:1px solid #2b4455;border-radius:15px;margin:24px 0;padding:24px}a{color:#95f2ff}p{color:#b9c9d9}.btn{display:inline-block;background:#8dffb9;color:#0a2019;text-decoration:none;font-weight:bold;padding:13px 18px;border-radius:10px;margin:8px 10px 8px 0}.warn{color:#ffd39f}.small{font-size:15px}ul{padding-left:24px}</style></head>
-<body><main><div class="tag">NEAR Hackathon candidate / audit build</div><h1>AgentGuard<span class="green">.</span></h1>
-<p>A testnet-only contract proof built and unit-tested in an isolated Render build. Its rules cap proposed spending, reject nonce replay, restrict recipients and record human review.</p>
-<div class="card"><h2>What this deployment proves</h2>
-<ul><li>Rust source compiled into a NEAR-compatible WebAssembly artifact.</li><li>Automated unit tests were executed during container build.</li><li>A SHA-256 checksum is available from the health endpoint.</li><li>No wallet, signing key, real funds or token transfers exist on this service.</li></ul>
-<a class="btn" href="/contract.wasm">Download compiled WASM</a><a href="/health">Read build checksum</a></div>
-<div class="card"><h2>Security &amp; limitations</h2><p class="warn"><strong>Not deployed on the NEAR blockchain.</strong> On-chain enforcement and a verifiable NEAR testnet transaction remain separate acceptance gates. A successful build is not a completed hackathon submission.</p>
-<p class="small">The interactive sandbox is hosted separately and is private until reviewed. The linked source is public for code audit.</p>
-<p><a href="https://github.com/aritomas3123-boop/near-agentguard">Public GitHub source and tests</a> · <a href="https://nearhackathon.com/">Hackathon rules</a></p></div>
-</main></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="A verifiable NEAR testnet smart contract for agent spend proposals, replay defense and human approvals. Real on-chain transactions, 20 Rust tests.">
+<title>AgentGuard — Verifiable NEAR Testnet Security Demo</title>
+<style>
+:root{--bg:#090e15;--panel:#121c28;--line:#324355;--mint:#9af6c6;--text:#eff7fa;--muted:#b0c0cd;--gold:#f0c58e;--red:#f5a7a7}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse at 80% 0,#19352e 0,transparent 43%),var(--bg);color:var(--text);font:16px/1.55 system-ui,-apple-system,Segoe UI,sans-serif}
+a{color:var(--mint);text-underline-offset:3px}a:hover{color:#dbffee}
+.container{max-width:1140px;padding:0 24px;margin:0 auto}
+nav{border-bottom:1px solid var(--line);background:#0a1119d9;position:sticky;top:0;z-index:3;backdrop-filter:blur(12px)}
+.nav{display:flex;align-items:center;justify-content:space-between;gap:18px;min-height:68px}.brand{font-size:20px;font-weight:900;letter-spacing:-.04em}.brand em{font-style:normal;color:var(--mint)}
+.nav-links{display:flex;gap:23px;font-size:13px}.nav-links a{color:#c9d8e4}
+.hero{padding:70px 0 42px}.eyebrow{text-transform:uppercase;letter-spacing:.14em;color:var(--mint);font-size:12px;font-weight:800}
+h1{font-size:clamp(42px,6vw,76px);letter-spacing:-.06em;line-height:1.06;max-width:980px;margin:19px 0 20px}
+h2{font-size:clamp(26px,3vw,34px);letter-spacing:-.03em;margin:0 0 14px}h3{font-size:20px;margin:7px 0}
+.lead{font-size:19px;color:var(--muted);max-width:780px}
+.actions{display:flex;gap:12px;flex-wrap:wrap;margin:29px 0}
+.button{display:inline-flex;align-items:center;justify-content:center;border:1px solid #455c67;border-radius:12px;min-height:48px;padding:12px 19px;background:#1b2d3a;color:var(--text);text-decoration:none;font:700 15px system-ui,sans-serif;cursor:pointer}
+.button.primary{background:var(--mint);color:#082016;border-color:var(--mint)}.button:hover{filter:brightness(1.12)}.button:disabled{opacity:.65;cursor:wait}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.metric{padding:23px;background:linear-gradient(135deg,#172637,#121b27);border:1px solid var(--line);border-radius:17px}
+.metric strong{display:block;font-size:27px;letter-spacing:-.04em;line-height:1.35}.metric span{font-size:13px;color:var(--muted)}
+.section{padding:40px 0}.columns{display:grid;grid-template-columns:1.15fr .85fr;gap:21px;align-items:start}
+.card{background:linear-gradient(160deg,#172432,#101a26);border:1px solid var(--line);border-radius:18px;padding:26px}
+.card p{color:var(--muted)}.small{font-size:13px;color:var(--muted)}
+.pill{font-size:12px;font-weight:800;padding:7px 12px;border-radius:99px;background:#1b3241;color:#c9dfed;white-space:nowrap}
+.verified{background:#173d2b;color:#a2ffd1}.checking{background:#323626;color:#ffe7a8}.fail{background:#432a2a;color:#ffcaca}
+.header-row{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}
+.data-row{display:flex;align-items:start;justify-content:space-between;gap:20px;border-bottom:1px solid #293b49;padding:11px 0;font-size:14px}
+.data-row span{color:var(--muted);flex-shrink:0}.data-row strong{text-align:right;overflow-wrap:anywhere;min-width:0}
+.note{color:var(--muted);font-size:13px;line-height:1.6}
+.steps{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:22px}
+.step{padding:21px;background:#121f2d;border:1px solid #314456;border-radius:15px}
+.step .number{color:var(--mint);font-size:13px;font-weight:800;letter-spacing:.07em}
+.step p{color:var(--muted);font-size:14px;margin:8px 0 12px}.step a{font-size:13px}
+.caution{padding:18px 21px;border:1px solid #846440;background:#2c2218;border-radius:14px;color:#f7dfb6;margin:21px 0}
+.caution p{color:#e8d5b2;font-size:14px;margin:8px 0 0}
+.code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere;font-size:13px;color:#bddeea}
+.flow{display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;margin-top:24px}
+.flow span{background:#1b2c3b;border:1px solid #395363;border-radius:10px;padding:10px 13px;font-size:13px}.flow b{color:var(--mint)}
+footer{border-top:1px solid var(--line);padding:30px 0 45px;margin-top:45px;color:var(--muted);font-size:13px}
+@media(max-width:840px){.columns{grid-template-columns:1fr}.grid{grid-template-columns:1fr}.hero{padding-top:48px}}
+@media(max-width:620px){.steps{grid-template-columns:1fr}.nav-links{gap:11px}.nav-links a{font-size:12px}.container{padding:0 17px}.card{padding:18px}.data-row{flex-direction:column;gap:4px}.data-row strong{text-align:left}.actions{flex-direction:column}.button{width:100%}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+<script src="/app.js" defer></script>
+</head>
+<body>
+<nav><div class="container nav"><div class="brand">◇ Agent<em>Guard</em></div><div class="nav-links"><a href="#evidence">Blockchain evidence</a><a href="#security">Security</a><a href="https://github.com/aritomas3123-boop/near-agentguard">Source code</a></div></div></nav>
+<main class="container">
+<section class="hero">
+<div class="eyebrow">NEAR TESTNET · AGENT SECURITY · 2026 HACKATHON CANDIDATE</div>
+<h1>Agents may propose.<br><span style="color:var(--mint)">Humans decide.</span></h1>
+<p class="lead">AgentGuard is an on-chain policy proof for restricted agent spending requests. It records proposals, enforces limits and replay defenses, and requires an independent reviewer before approval.</p>
+<div class="actions">
+<a class="button primary" href="#evidence">Verify live blockchain state</a>
+<a class="button" href="https://github.com/aritomas3123-boop/near-agentguard">Inspect the source</a>
+<a class="button" href="/contract.wasm">Download verified WASM</a>
+</div>
+<div class="grid">
+<div class="metric"><strong>20 / 20</strong><span>Rust unit tests passed in a Render Docker build</span></div>
+<div class="metric"><strong>On-chain</strong><span>Deployed on NEAR testnet · independently verifiable</span></div>
+<div class="metric"><strong>3 roles</strong><span>Contract account · agent · human reviewer</span></div>
+</div>
+</section>
+
+<section class="section" id="evidence">
+<div class="eyebrow">01 / LIVE PROOF</div>
+<div class="columns">
+<div class="card">
+<div class="header-row"><h2>Read the blockchain directly</h2><span class="pill checking" id="chain-status" role="status">Checking</span></div>
+<p>This panel requests finalized data from NEAR testnet. The reported owner, reservation, approval and deployed contract hash are checked against the real account.</p>
+<div id="chain-result" aria-live="polite" aria-atomic="true"><p class="note">Reading the contract state…</p></div>
+<div class="actions"><button class="button primary" type="button" id="verify-button">Verify live state</button><a class="button" href="/api/onchain">View JSON proof</a></div>
+</div>
+<div class="card">
+<div class="eyebrow">DEPLOYED CONTRACT</div>
+<h2>One auditable account</h2>
+<p class="code">agentguard-audit-20261106.testnet</p>
+<div class="data-row"><span>Deployment</span><strong>NEAR testnet</strong></div>
+<div class="data-row"><span>Code verification</span><strong>Exact WASM SHA-256 match</strong></div>
+<div class="data-row"><span>Reviewer</span><strong class="code">agentguard-review-20261106.testnet</strong></div>
+<div class="data-row"><span>Token transfers</span><strong>Not implemented</strong></div>
+<p class="small">The downloaded artifact matches the bytecode read back from NEAR at deployment verification. A live hash check is performed by the panel on the left.</p>
+<p><a href="https://explorer.testnet.near.org/transactions/4NPktQj9PdUB97ZNvkwJ2QzuhGNJqnVbRsYAc16staqF" target="_blank" rel="noopener noreferrer">See deployment transaction ↗</a></p>
+</div>
+</div>
+</section>
+<section class="section">
+<div class="eyebrow">02 / ON-CHAIN WORKFLOW</div>
+<h2>Four proofs, not a mockup.</h2>
+<div class="steps">
+<div class="step"><div class="number">01 · ACTUAL BLOCKCHAIN TRANSACTION</div><h3>The agent proposes 1.25 test NEAR</h3><p>A separate agent account reserves 1,250 milliNEAR. The contract writes a request nonce and an unapproved proposal.</p><a target="_blank" rel="noopener noreferrer" href="https://explorer.testnet.near.org/transactions/EcV85FPVYYDbnbShaLG9vkzNEZ1Dw7vtJyz1gpiSDcbB">View successful proposal ↗</a></div>
+<div class="step"><div class="number">02 · EXPECTED SECURITY REJECTION</div><h3>Agent approval is denied</h3><p>The agent attempts to approve its own request. The contract rejects it because the agent is not the authorized reviewer.</p><a target="_blank" rel="noopener noreferrer" href="https://explorer.testnet.near.org/transactions/GiYHu4XfiJVPzg3wrraVXVZ8wR77BEw4KgPSXCjDSzQH">View rejected approval ↗</a></div>
+<div class="step"><div class="number">03 · AUTHORIZED APPROVAL</div><h3>The reviewer approves</h3><p>The distinct reviewer account records approval. The state becomes approved, but the contract contains no payment or transfer function.</p><a target="_blank" rel="noopener noreferrer" href="https://explorer.testnet.near.org/transactions/EyV16Dog1wjRxUGguzdsh6gVrv8cojg1KVuaFXiyehPp">View reviewer approval ↗</a></div>
+<div class="step"><div class="number">04 · EXPECTED REPLAY REJECTION</div><h3>A duplicate nonce is blocked</h3><p>Repeating the original proposal fails. The on-chain reserved amount stays at 1,250 milliNEAR.</p><a target="_blank" rel="noopener noreferrer" href="https://explorer.testnet.near.org/transactions/DnPxvaLSTxQYm5Q8sAyz1FdyioSwwiY8RjhyNiE4Y9dt">View rejected replay ↗</a></div>
+</div>
+</section>
+<section class="section" id="security">
+<div class="eyebrow">03 / ENGINEERING TRANSPARENCY</div>
+<h2>What the contract does and does not do</h2>
+<div class="columns">
+<div class="card">
+<h3>Enforced in the NEAR testnet contract</h3>
+<p>Per-action reservation cap, daily account budget cap, strict recipient allowlist, nonce replay prevention, authorized reviewer-only approval, and on-chain audit state.</p>
+<h3>Verified build</h3>
+<p>The Docker build runs 20 Rust unit tests before producing the WebAssembly binary. Render publishes the identical artifact for inspection.</p>
+<p><a href="https://github.com/aritomas3123-boop/near-agentguard/blob/main/BUILD-VERIFICATION.md">Read build verification ↗</a></p>
+</div>
+<div class="card">
+<h3>Still outside the scope</h3>
+<p>This is a proof of the decision and approval layer. It is <strong>not</strong> a production wallet, custody system, transfer engine or full third-party security audit. It does not transfer funds, manage real-money payments, or control an external agent's wallet.</p>
+<div class="caution"><strong>Testnet only.</strong><p>All NEAR used in the proof is faucet-funded test currency without monetary value. Successful approval means an auditable state change, not payment execution.</p></div>
+</div>
+</div>
+<div class="flow" aria-label="System flow"><span>AI agent</span><b>→</b><span>Propose on chain</span><b>→</b><span>Policy checks</span><b>→</b><span>Human reviewer</span><b>→</b><span>Auditable record</span></div>
+</section>
+</main>
+<footer><div class="container">AgentGuard · NEAR Hackathon candidate · Independent prototype, not affiliated with the NEAR Foundation · Testnet only · No funds transferred · <a href="https://nearhackathon.com/">Hackathon information</a></div></footer>
+</body></html>
