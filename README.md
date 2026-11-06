@@ -37,3 +37,7 @@ The hosted web sandbox and this contract are separate until their integration is
 Before submission: actual testnet deployment and transaction hash; authentic screen recording; public repository with reproducible tests, threat model, and documented limitations; eligibility and deadline confirmation.
 
 **No submission has been made for this project.**
+
+## Verified remote build
+Render Docker build passed 20/20 Rust tests and created a WebAssembly artifact. See [BUILD-VERIFICATION.md](BUILD-VERIFICATION.md) and the [live read-only proof](https://near-agentguard-contract-proof.onrender.com/). This is **not deployed on NEAR**.
+
