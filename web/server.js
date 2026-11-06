@@ -3,6 +3,8 @@ const http = require("node:http");
 const fs = require("node:fs");
 const crypto = require("node:crypto");
 const path = require("node:path");
+const { validateRequest, computePolicy, AGENT_ACCOUNT, CONTRACT_ACCOUNT } = require("./agent-core");
+const { configured: geminiConfigured, explainWithGemini } = require("./agent-ai");
 
 const PORT = Number(process.env.PORT || 10000);
 const ACCOUNT = "agentguard-audit-20261106.testnet";
@@ -29,6 +31,51 @@ const files = {
   "/contract.wasm": {type: "application/wasm", data: wasm}
 };
 let serial = 0;
+const rateBuckets = new Map();
+function allowedRequest(ip) {
+  const now = Date.now();
+  for (const [key, value] of rateBuckets) if (now - value.windowStart > 60000) rateBuckets.delete(key);
+  const bucket = rateBuckets.get(ip) || { windowStart: now, count: 0 };
+  if (now - bucket.windowStart > 60000) { bucket.windowStart = now; bucket.count = 0; }
+  bucket.count++;
+  rateBuckets.set(ip, bucket);
+  return bucket.count <= 8;
+}
+async function readSmallJson(req) {
+  let size = 0;
+  const chunks = [];
+  for await (const chunk of req) {
+    size += chunk.length;
+    if (size > 4096) throw new Error("Request body exceeds 4 KB");
+    chunks.push(chunk);
+  }
+  const raw = Buffer.concat(chunks).toString("utf8");
+  if (!raw.trim()) throw new Error("Empty body");
+  return JSON.parse(raw);
+}
+async function analyzeRequest(payload) {
+  const request = validateRequest(payload);
+  const [account, owner] = await Promise.all([
+    rpc("query", {request_type:"view_account", finality:"final", account_id:CONTRACT_ACCOUNT}),
+    view("owner", {})
+  ]);
+  if (account.code_hash !== EXPECTED_CODE_HASH || owner !== REVIEWER) {
+    throw new Error("Unexpected on-chain contract code or reviewer");
+  }
+  const dayUtc = Math.floor(Date.now() / 86400000);
+  const [reservedMilliNear, priorProposal] = await Promise.all([
+    view("get_reserved_milli_near", {agent:AGENT_ACCOUNT, day_utc:dayUtc}),
+    view("get_proposal", {id:AGENT_ACCOUNT+":"+request.nonce})
+  ]);
+  const policy = computePolicy(request, {
+    reservedMilliNear, priorProposal, dayUtc, chainVerified:true
+  });
+  const ai = await explainWithGemini(request, policy);
+  return {ok:true, agentWorkflow:"read_contract → check_policy → advisory_AI → unsigned_draft",
+    policy, ai, modelUsed:ai.status==="COMPLETED", network:"testnet",
+    readOnly:true, signed:false, transferred:false, checkedAt:new Date().toISOString()};
+}
+
 
 function setHeaders(res, type, cache = "no-store") {
   res.setHeader("Content-Type", type);
@@ -97,6 +144,34 @@ async function verifyOnChain() {
 }
 const app = http.createServer(async (req, res) => {
   const pathname = (req.url || "/").split("?")[0];
+  if (pathname === "/api/agent/status" && req.method === "GET") {
+    json(res, 200, {ok:true, modelConfigured:geminiConfigured(),
+      agentMode:geminiConfigured()?"Gemini AI advisory + deterministic blockchain policy":"Deterministic blockchain policy; AI key not configured",
+      contractAccount:CONTRACT_ACCOUNT, readOnly:true,
+      noSigningKeys:true, contractEnforcesFinalPolicy:true});
+    return;
+  }
+  if (pathname === "/api/agent/analyze" && req.method === "POST") {
+    if (!allowedRequest(req.socket.remoteAddress || "unknown")) {
+      json(res,429,{ok:false,error:"Rate limit: maximum 8 analyses per minute"});
+      return;
+    }
+    if (!String(req.headers["content-type"]||"").startsWith("application/json")) {
+      json(res,415,{ok:false,error:"Content-Type must be application/json"});
+      return;
+    }
+    try {
+      const payload = await readSmallJson(req);
+      const outcome = await analyzeRequest(payload);
+      json(res,200,outcome);
+    } catch(error) {
+      const msg = String(error.message || "Unable to analyze");
+      const clientError = /^(A JSON object|Invalid recipient|Amount must|Nonce must|Purpose must|Purpose contains|Request body|Empty body|Unexpected token)/.test(msg);
+      json(res,clientError?400:503,{ok:false,error:clientError?msg:"Cannot verify the request safely; no action performed",
+        readOnly:true, signed:false, transferred:false});
+    }
+    return;
+  }
   if (req.method !== "GET" && req.method !== "HEAD") {
     res.writeHead(405, {"Allow": "GET, HEAD"}); res.end(); return;
   }

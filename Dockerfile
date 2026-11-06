@@ -15,6 +15,11 @@ WORKDIR /app
 COPY web/server.js ./server.js
 COPY web/index.html ./index.html
 COPY web/app.js ./app.js
+COPY web/agent-core.js ./agent-core.js
+COPY web/agent-ai.js ./agent-ai.js
+COPY web/agent-ui.js ./agent-ui.js
+COPY web/agent-core.test.js ./agent-core.test.js
+RUN node --test agent-core.test.js
 COPY --from=compile /src/target/wasm32-unknown-unknown/release/agentguard_near.wasm ./agentguard_near.wasm
 COPY --from=compile /src/contract.sha256 ./contract.sha256
 ENV NODE_ENV=production

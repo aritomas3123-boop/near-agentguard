@@ -47,9 +47,10 @@ footer{border-top:1px solid var(--line);padding:30px 0 45px;margin-top:45px;colo
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 </style>
 <script src="/app.js" defer></script>
+<script src="/agent-ui.js" defer></script>
 </head>
 <body>
-<nav><div class="container nav"><div class="brand">◇ Agent<em>Guard</em></div><div class="nav-links"><a href="#evidence">Blockchain evidence</a><a href="#security">Security</a><a href="https://github.com/aritomas3123-boop/near-agentguard">Source code</a></div></div></nav>
+<nav><div class="container nav"><div class="brand">◇ Agent<em>Guard</em></div><div class="nav-links"><a href="#evidence">Blockchain evidence</a><a href="#agent">Agent analysis</a><a href="#security">Security</a><a href="https://github.com/aritomas3123-boop/near-agentguard">Source code</a></div></div></nav>
 <main class="container">
 <section class="hero">
 <div class="eyebrow">NEAR TESTNET · AGENT SECURITY · 2026 HACKATHON CANDIDATE</div>
@@ -98,6 +99,47 @@ footer{border-top:1px solid var(--line);padding:30px 0 45px;margin-top:45px;colo
 <div class="step"><div class="number">03 · AUTHORIZED APPROVAL</div><h3>The reviewer approves</h3><p>The distinct reviewer account records approval. The state becomes approved, but the contract contains no payment or transfer function.</p><a target="_blank" rel="noopener noreferrer" href="https://explorer.testnet.near.org/transactions/EyV16Dog1wjRxUGguzdsh6gVrv8cojg1KVuaFXiyehPp">View reviewer approval ↗</a></div>
 <div class="step"><div class="number">04 · EXPECTED REPLAY REJECTION</div><h3>A duplicate nonce is blocked</h3><p>Repeating the original proposal fails. The on-chain reserved amount stays at 1,250 milliNEAR.</p><a target="_blank" rel="noopener noreferrer" href="https://explorer.testnet.near.org/transactions/DnPxvaLSTxQYm5Q8sAyz1FdyioSwwiY8RjhyNiE4Y9dt">View rejected replay ↗</a></div>
 </div>
+</section>
+<section class="section" id="agent">
+<div class="eyebrow">03 / GUARDED AGENT WORKFLOW</div>
+<h2>Ask the agent to assess a proposal</h2>
+<p class="lead">The read-only agent checks live NEAR contract rules before preparing an unsigned proposal. A Gemini model can add advisory analysis only when a server-side API key is configured. No wallet keys are available to this page.</p>
+<div class="columns">
+<div class="card">
+<div class="header-row"><h3>Proposed action</h3><span class="pill checking" id="agent-status">Checking availability</span></div>
+<form id="agent-form">
+<label for="agent-recipient" style="display:block;margin-top:15px">Recipient account</label>
+<select id="agent-recipient" required style="display:block;width:100%;padding:12px;border-radius:9px;background:#0b1722;color:#eff7fa;border:1px solid #486172;margin:8px 0 16px;font:inherit">
+<option value="api.near.ai">api.near.ai · Allowlisted</option>
+<option value="storage.near">storage.near · Allowlisted</option>
+<option value="audit.near">audit.near · Allowlisted</option>
+<option value="unlisted.near">unlisted.near · Not allowed</option>
+</select>
+<label for="agent-amount" style="display:block">Amount in milliNEAR (1,000 = 1 test NEAR)</label>
+<input id="agent-amount" type="number" min="1" max="100000" step="1" value="500" required style="display:block;width:100%;padding:12px;border-radius:9px;background:#0b1722;color:#eff7fa;border:1px solid #486172;margin:8px 0 16px;font:inherit">
+<label for="agent-purpose" style="display:block">What is the agent trying to do?</label>
+<textarea id="agent-purpose" rows="3" maxlength="600" minlength="8" required style="display:block;width:100%;padding:12px;border-radius:9px;background:#0b1722;color:#eff7fa;border:1px solid #486172;margin:8px 0 16px;font:inherit">Reserve testnet funds for a research agent to store audit data safely.</textarea>
+<label for="agent-nonce" style="display:block">Unique request ID</label>
+<input id="agent-nonce" required maxlength="64" style="display:block;width:100%;padding:12px;border-radius:9px;background:#0b1722;color:#eff7fa;border:1px solid #486172;margin:8px 0 12px;font:inherit" aria-describedby="nonce-hint">
+<p class="note" id="nonce-hint">Repeating an already recorded request ID will be rejected by the contract.</p>
+<div class="actions">
+<button type="submit" class="button primary" id="agent-submit">Analyze safely</button>
+<button type="button" class="button" id="agent-new-nonce">New request ID</button>
+</div>
+</form>
+<div class="actions">
+<button type="button" class="button" id="agent-demo-safe">Try allowed example</button>
+<button type="button" class="button" id="agent-demo-block">Try blocked example</button>
+</div>
+</div>
+<div class="card">
+<div class="eyebrow">REAL CONTRACT CHECK</div>
+<h3>Agent assessment</h3>
+<p class="note">The service reads contract state on NEAR testnet. Gemini commentary is optional, cannot override a rejection and does not sign or broadcast a transaction.</p>
+<div id="agent-output" aria-live="polite"><p class="note">Choose an example or submit a request to see the live analysis.</p></div>
+</div>
+</div>
+<div class="caution"><strong>Security boundary:</strong><p>This is a read-only planning and evaluation interface. It does not create or approve transactions. Eligible proposals require a separate, explicit human action with an independently controlled testnet wallet. A Gemini model is not considered connected until the status above explicitly confirms it.</p></div>
 </section>
 <section class="section" id="security">
 <div class="eyebrow">03 / ENGINEERING TRANSPARENCY</div>
