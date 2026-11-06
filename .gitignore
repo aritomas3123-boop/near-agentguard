@@ -1,0 +1,9 @@
+/target/
+**/.env
+**/.env.*
+*.pem
+*.key
+*.secret
+.DS_Store
+.vscode/
+.idea/
