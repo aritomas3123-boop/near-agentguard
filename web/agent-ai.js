@@ -1,12 +1,34 @@
 "use strict";
 
 const DEFAULT_MODEL = "gemini-3.5-flash";
+const MAX_DAILY_ADVISORY_CALLS = 12;
+const MAX_MINUTE_ADVISORY_CALLS = 3;
+let quotaDay = "";
+let dailyCalls = 0;
+let minuteStart = 0;
+let minuteCalls = 0;
+function acquireAdvisoryQuota() {
+  const now = Date.now();
+  const day = new Date(now).toISOString().slice(0, 10);
+  if (quotaDay !== day) { quotaDay = day; dailyCalls = 0; }
+  if (now - minuteStart >= 60000) { minuteStart = now; minuteCalls = 0; }
+  if (dailyCalls >= MAX_DAILY_ADVISORY_CALLS || minuteCalls >= MAX_MINUTE_ADVISORY_CALLS) return false;
+  dailyCalls += 1; minuteCalls += 1;
+  return true;
+}
+function quotaStatus() {
+  const day = new Date().toISOString().slice(0, 10);
+  return {maxDailyCallsPerInstance:MAX_DAILY_ADVISORY_CALLS, remainingCallsToday:quotaDay===day ? Math.max(0,MAX_DAILY_ADVISORY_CALLS-dailyCalls) : MAX_DAILY_ADVISORY_CALLS, globalBillingLimit:false};
+}
 function scrub(s, max) { return typeof s === "string" ? s.replace(/[\u0000-\u001f\u007f]/g, " ").trim().slice(0, max) : ""; }
 function configured() { return Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim()); }
 
 async function explainWithGemini(request, policy) {
   if (!configured()) return { enabled: false, provider: "Gemini", status: "NOT_CONFIGURED",
     explanation: "The deterministic on-chain policy checks are active. Gemini narration is not connected to this Render service. No AI model was called." };
+
+  if (!acquireAdvisoryQuota()) return {enabled: true, provider: "Gemini", status:"LIMIT_REACHED",
+    explanation:"The demonstration's Gemini request quota is exhausted. Contract checks remain active; no AI call was made."};
 
   const model = /^[\w.-]{3,70}$/.test(process.env.GEMINI_MODEL || "") ? process.env.GEMINI_MODEL : DEFAULT_MODEL;
   const prompt = {
@@ -46,4 +68,4 @@ async function explainWithGemini(request, policy) {
       reason: scrub(err.message,120) };
   }
 }
-module.exports = { configured, explainWithGemini };
+module.exports = { configured, explainWithGemini, quotaStatus };

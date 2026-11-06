@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const crypto = require("node:crypto");
 const path = require("node:path");
 const { validateRequest, computePolicy, AGENT_ACCOUNT, CONTRACT_ACCOUNT } = require("./agent-core");
-const { configured: geminiConfigured, explainWithGemini } = require("./agent-ai");
+const { configured: geminiConfigured, explainWithGemini, quotaStatus } = require("./agent-ai");
 
 const PORT = Number(process.env.PORT || 10000);
 const ACCOUNT = "agentguard-audit-20261106.testnet";
@@ -147,6 +147,7 @@ const app = http.createServer(async (req, res) => {
   if (pathname === "/api/agent/status" && req.method === "GET") {
     json(res, 200, {ok:true, modelConfigured:geminiConfigured(),
       agentMode:geminiConfigured()?"Gemini AI advisory + deterministic blockchain policy":"Deterministic blockchain policy; AI key not configured",
+      advisoryQuota:quotaStatus(),
       contractAccount:CONTRACT_ACCOUNT, readOnly:true,
       noSigningKeys:true, contractEnforcesFinalPolicy:true});
     return;
